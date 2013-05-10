@@ -36,11 +36,12 @@ TARGET  = libSDL.la
 SOURCES =  ./src/*.c ./src/audio/*.c ./src/cdrom/*.c ./src/cpuinfo/*.c ./src/events/*.c ./src/file/*.c ./src/stdlib/*.c ./src/thread/*.c ./src/timer/*.c ./src/video/*.c ./src/joystick/*.c ./src/video/dummy/*.c ./src/audio/disk/*.c ./src/audio/dummy/*.c ./src/video/wincommon/*.c ./src/video/windib/*.c ./src/audio/windib/*.c ./src/joystick/win32/*.c ./src/cdrom/win32/*.c ./src/thread/win32/SDL_sysmutex.c ./src/thread/win32/SDL_syssem.c ./src/thread/win32/SDL_systhread.c ./src/thread/generic/SDL_syscond.c ./src/timer/win32/*.c ./src/loadso/win32/*.c ./src/main/win32/*.rc
 OBJECTS = $(objects)/SDL.lo $(objects)/SDL_error.lo $(objects)/SDL_fatal.lo $(objects)/SDL_audio.lo $(objects)/SDL_audiocvt.lo $(objects)/SDL_audiodev.lo $(objects)/SDL_mixer.lo $(objects)/SDL_mixer_MMX.lo $(objects)/SDL_mixer_MMX_VC.lo $(objects)/SDL_mixer_m68k.lo $(objects)/SDL_wave.lo $(objects)/SDL_cdrom.lo $(objects)/SDL_cpuinfo.lo $(objects)/SDL_active.lo $(objects)/SDL_events.lo $(objects)/SDL_expose.lo $(objects)/SDL_keyboard.lo $(objects)/SDL_mouse.lo $(objects)/SDL_quit.lo $(objects)/SDL_resize.lo $(objects)/SDL_rwops.lo $(objects)/SDL_getenv.lo $(objects)/SDL_iconv.lo $(objects)/SDL_malloc.lo $(objects)/SDL_qsort.lo $(objects)/SDL_stdlib.lo $(objects)/SDL_string.lo $(objects)/SDL_thread.lo $(objects)/SDL_timer.lo $(objects)/SDL_RLEaccel.lo $(objects)/SDL_blit.lo $(objects)/SDL_blit_0.lo $(objects)/SDL_blit_1.lo $(objects)/SDL_blit_A.lo $(objects)/SDL_blit_N.lo $(objects)/SDL_bmp.lo $(objects)/SDL_cursor.lo $(objects)/SDL_gamma.lo $(objects)/SDL_pixels.lo $(objects)/SDL_stretch.lo $(objects)/SDL_surface.lo $(objects)/SDL_video.lo $(objects)/SDL_yuv.lo $(objects)/SDL_yuv_mmx.lo $(objects)/SDL_yuv_sw.lo $(objects)/SDL_joystick.lo $(objects)/SDL_nullevents.lo $(objects)/SDL_nullmouse.lo $(objects)/SDL_nullvideo.lo $(objects)/SDL_diskaudio.lo $(objects)/SDL_dummyaudio.lo $(objects)/SDL_sysevents.lo $(objects)/SDL_sysmouse.lo $(objects)/SDL_syswm.lo $(objects)/SDL_wingl.lo $(objects)/SDL_dibevents.lo $(objects)/SDL_dibvideo.lo $(objects)/SDL_dibaudio.lo $(objects)/SDL_mmjoystick.lo $(objects)/SDL_syscdrom.lo $(objects)/SDL_sysmutex.lo $(objects)/SDL_syssem.lo $(objects)/SDL_systhread.lo $(objects)/SDL_syscond.lo $(objects)/SDL_systimer.lo $(objects)/SDL_sysloadso.lo $(objects)/version.o
 
-SDLMAIN_TARGET = libSDLmain.a
+SDLMAIN_TARGET = libSDLmain.la
 SDLMAIN_SOURCES = ./src/main/win32/*.c
 SDLMAIN_OBJECTS = $(objects)/SDL_win32_main.o
+SDLMAIN_LDFLAGS = @SDLMAIN_LDFLAGS@
 
-DIST = acinclude autogen.sh Borland.html Borland.zip BUGS build-scripts configure configure.in COPYING CREDITS CWprojects.sea.bin docs docs.html include INSTALL Makefile.dc Makefile.minimal Makefile.in MPWmake.sea.bin README* sdl-config.in sdl.m4 sdl.pc.in SDL.qpg.in SDL.spec SDL.spec.in src test TODO VisualCE.zip VisualC.html VisualC.zip Watcom-OS2.zip Watcom-Win32.zip symbian.zip WhatsNew Xcode.tar.gz
+DIST = acinclude autogen.sh Borland.html Borland.zip BUGS build-scripts configure configure.in COPYING CREDITS CWprojects.sea.bin docs docs.html include INSTALL Makefile.dc Makefile.minimal Makefile.in MPWmake.sea.bin README* sdl-config.in sdl.m4 sdl.pc.in SDL.qpg.in SDL.spec SDL.spec.in src test TODO VisualCE VisualC.html VisualC Watcom-OS2.zip Watcom-Win32.zip symbian.zip WhatsNew Xcode
 
 HDRS = SDL.h SDL_active.h SDL_audio.h SDL_byteorder.h SDL_cdrom.h SDL_cpuinfo.h SDL_endian.h SDL_error.h SDL_events.h SDL_getenv.h SDL_joystick.h SDL_keyboard.h SDL_keysym.h SDL_loadso.h SDL_main.h SDL_mouse.h SDL_mutex.h SDL_name.h SDL_opengl.h SDL_platform.h SDL_quit.h SDL_rwops.h SDL_stdinc.h SDL_syswm.h SDL_thread.h SDL_timer.h SDL_types.h SDL_version.h SDL_video.h begin_code.h close_code.h
 
@@ -65,22 +66,17 @@ $(objects):
 
 .PHONY: all depend install install-bin install-hdrs install-lib install-data install-man uninstall uninstall-bin uninstall-hdrs uninstall-lib uninstall-data uninstall-man clean distclean dist
 depend:
-	@SOURCES="$(SOURCES)" INCLUDE="$(INCLUDE)" output="$(depend)" \
+	@SOURCES="$(SOURCES) $(SDLMAIN_SOURCES)" INCLUDE="$(INCLUDE)" output="$(depend)" \
 	$(SHELL) $(auxdir)/makedep.sh
-	@for src in $(SDLMAIN_SOURCES); do \
-	    obj=`echo $$src | sed -e 's|.*/||' -e 's|\.[^\.]*$$|.o|'`; \
-	    echo "\$$(objects)/$$obj: $$src" >>$(depend); \
-	    echo "	\$$(CC) \$$(CFLAGS) \$$(EXTRA_CFLAGS) -c $$src -o \$$@" >>$(depend); \
-	done
 
 include $(depend)
 
 $(objects)/$(TARGET): $(OBJECTS)
-	$(LIBTOOL) --mode=link $(CC) -o $@ $(OBJECTS) $(LDFLAGS) $(EXTRA_LDFLAGS) $(LT_LDFLAGS)
+	$(LIBTOOL) --mode=link $(CC) -o $@ $^ $(LDFLAGS) $(EXTRA_LDFLAGS) $(LT_LDFLAGS)
 
 $(objects)/$(SDLMAIN_TARGET): $(SDLMAIN_OBJECTS)
-	$(AR) cru $@ $(SDLMAIN_OBJECTS)
-	$(RANLIB) $@
+	$(LIBTOOL) --mode=link $(CC) -o $@ $^ $(LDFLAGS) $(EXTRA_LDFLAGS) $(LT_LDFLAGS) $(SDLMAIN_LDFLAGS)
+
 
 install: all install-bin install-hdrs install-lib install-data install-man
 install-bin:
@@ -95,8 +91,7 @@ install-hdrs:
 install-lib: $(objects) $(objects)/$(TARGET) $(objects)/$(SDLMAIN_TARGET)
 	$(SHELL) $(auxdir)/mkinstalldirs $(DESTDIR)$(libdir)
 	$(LIBTOOL) --mode=install $(INSTALL) $(objects)/$(TARGET) $(DESTDIR)$(libdir)/$(TARGET)
-	$(INSTALL) -m 644 $(objects)/$(SDLMAIN_TARGET) $(DESTDIR)$(libdir)/$(SDLMAIN_TARGET)
-	$(RANLIB) $(DESTDIR)$(libdir)/$(SDLMAIN_TARGET)
+	$(LIBTOOL) --mode=install $(INSTALL) $(objects)/$(SDLMAIN_TARGET) $(DESTDIR)$(libdir)/$(SDLMAIN_TARGET)
 install-data:
 	$(SHELL) $(auxdir)/mkinstalldirs $(DESTDIR)$(datadir)/aclocal
 	$(INSTALL) -m 644 $(srcdir)/sdl.m4 $(DESTDIR)$(datadir)/aclocal/sdl.m4
@@ -120,7 +115,7 @@ uninstall-hdrs:
 	-rmdir $(DESTDIR)$(includedir)/SDL
 uninstall-lib:
 	$(LIBTOOL) --mode=uninstall rm -f $(DESTDIR)$(libdir)/$(TARGET)
-	rm -f $(DESTDIR)$(libdir)/$(SDLMAIN_TARGET)
+	$(LIBTOOL) --mode=uninstall rm -f $(DESTDIR)$(libdir)/$(SDLMAIN_TARGET)
 uninstall-data:
 	rm -f $(DESTDIR)$(datadir)/aclocal/sdl.m4
 	rm -f $(DESTDIR)$(libdir)/pkgconfig/sdl.pc
